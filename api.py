@@ -1,19 +1,34 @@
-# File: api_simple.py
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
 import joblib
 import io
-import asyncio
 from typing import List, Dict
-import json
 from datetime import datetime
+import uvicorn
+import sqlite3
+import database_setup as db
 
-app = FastAPI(title="Credit Card Fraud Detection API",
-              description="API for real-time credit card fraud detection",
-              version="1.0.0")
+app = FastAPI(
+    title="Credit Card Fraud Detection API",
+    description="API for real-time credit card fraud detection with database storage",
+    version="1.0.0"
+)
+
+# Add CORS middleware to allow frontend requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
+
+# Initialize database
+db.setup_database()
 
 # Load the pre-trained model and expected columns
 try:
@@ -64,7 +79,7 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
 
 @app.post("/predict-csv")
 async def predict_csv(file: UploadFile = File(...)):
-    """Process a CSV file and return fraudulent transactions"""
+    """Process a CSV file, detect fraud, and store results in database"""
     if model is None:
         raise HTTPException(
             status_code=500, 
@@ -95,15 +110,64 @@ async def predict_csv(file: UploadFile = File(...)):
         # Convert to JSON
         fraudulent_transactions = fraudulent_df.to_dict(orient='records')
         
-        return JSONResponse({
+        # Prepare response data
+        result = {
             "total_transactions": len(df),
             "fraudulent_transactions": len(fraudulent_df),
             "fraudulent_data": fraudulent_transactions,
             "timestamp": datetime.now().isoformat()
-        })
+        }
+        
+        # Store results in database
+        db.insert_fraudulent_transactions(result, file.filename)
+        
+        return JSONResponse(result)
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}")
+
+@app.get("/fraudulent-transactions")
+async def get_fraudulent_transactions(limit: int = 100):
+    """Get fraudulent transactions from database"""
+    try:
+        transactions = db.get_fraudulent_transactions(limit)
+        return JSONResponse({
+            "count": len(transactions),
+            "transactions": transactions,
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving transactions: {str(e)}")
+
+@app.get("/processing-logs")
+async def get_processing_logs(limit: int = 10):
+    """Get processing logs from database"""
+    try:
+        logs = db.get_processing_logs(limit)
+        return JSONResponse({
+            "count": len(logs),
+            "logs": logs,
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving logs: {str(e)}")
+
+@app.delete("/clear-data")
+async def clear_data():
+    """Clear all data from database (for testing purposes)"""
+    try:
+        conn = sqlite3.connect('fraud_detection.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('DELETE FROM fraudulent_transactions')
+        cursor.execute('DELETE FROM processing_logs')
+        
+        conn.commit()
+        conn.close()
+        
+        return {"message": "All data cleared successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error clearing data: {str(e)}")
 
 @app.get("/health")
 async def health_check():
@@ -112,5 +176,4 @@ async def health_check():
     return {"status": status, "timestamp": datetime.now().isoformat()}
 
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
