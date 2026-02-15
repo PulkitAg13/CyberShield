@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UML Class Diagram - Fraud Detection System</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+            overflow: auto;
+        }
+
+        .diagram-container {
+            width: 100%;
+            min-height: calc(100vh - 40px);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .uml-canvas {
+            flex: 1;
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, auto);
+            gap: 80px 60px;
+            padding: 60px 40px;
+            min-height: 800px;
+        }
+
+        .class-box {
+            background: #ffffff;
+            border: 2px solid #2c3e50;
+            border-radius: 0;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            position: relative;
+            z-index: 10;
+            min-width: 280px;
+        }
+
+        .class-box:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .class-header {
+            padding: 12px 16px;
+            background: #34495e;
+            color: white;
+            text-align: center;
+            border-bottom: 2px solid #2c3e50;
+        }
+
+        .class-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .stereotype {
+            font-size: 0.75rem;
+            font-style: italic;
+            opacity: 0.9;
+            margin-bottom: 4px;
+        }
+
+        .class-type {
+            font-size: 0.8rem;
+            opacity: 0.85;
+            font-weight: 400;
+        }
+
+        .class-section {
+            border-bottom: 1px solid #bdc3c7;
+        }
+
+        .class-section:last-child {
+            border-bottom: none;
+        }
+
+        .section-divider {
+            height: 1px;
+            background: #2c3e50;
+            margin: 0;
+        }
+
+        .attribute-list, .method-list {
+            list-style: none;
+            padding: 8px 0;
+            margin: 0;
+            min-height: 40px;
+        }
+
+        .attribute-item, .method-item {
+            padding: 4px 16px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: #2c3e50;
+            line-height: 1.4;
+            border-bottom: none;
+        }
+
+        .visibility-public { color: #27ae60; font-weight: 600; }
+        .visibility-private { color: #e74c3c; font-weight: 600; }
+        .visibility-protected { color: #f39c12; font-weight: 600; }
+
+        .method-return {
+            color: #8e44ad;
+            font-weight: 500;
+        }
+
+        .data-type {
+            color: #3498db;
+            font-weight: 500;
+        }
+
+        /* Grid positioning */
+        .frontend-comp { grid-column: 1; grid-row: 1; }
+        .api-controller { grid-column: 2; grid-row: 1; }
+        .ml-model { grid-column: 3; grid-row: 1; }
+        .data-processor { grid-column: 1; grid-row: 2; }
+        .db-manager { grid-column: 2; grid-row: 2; }
+        .transaction-model { grid-column: 3; grid-row: 2; }
+        .config-manager { grid-column: 1; grid-row: 3; }
+        .logger { grid-column: 2; grid-row: 3; }
+        .exception-handler { grid-column: 3; grid-row: 3; }
+
+        /* SVG for relationship arrows */
+        .relationship-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .arrow-line {
+            stroke: #2c3e50;
+            stroke-width: 1.5;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+
+        .dependency-line {
+            stroke: #7f8c8d;
+            stroke-width: 1.5;
+            stroke-dasharray: 5,3;
+            fill: none;
+            marker-end: url(#arrowhead-dependency);
+        }
+
+        .composition-line {
+            stroke: #2c3e50;
+            stroke-width: 2;
+            fill: none;
+            marker-start: url(#diamond);
+            marker-end: url(#arrowhead);
+        }
+
+        .aggregation-line {
+            stroke: #2c3e50;
+            stroke-width: 1.5;
+            fill: none;
+            marker-start: url(#diamond-empty);
+            marker-end: url(#arrowhead);
+        }
+
+        .inheritance-line {
+            stroke: #2c3e50;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#triangle);
+        }
+
+        .arrow-label {
+            font-family: 'Inter', sans-serif;
+            font-size: 10px;
+            fill: #2c3e50;
+            text-anchor: middle;
+            font-weight: 500;
+            background: white;
+        }
+
+        .multiplicity {
+            font-family: 'Inter', sans-serif;
+            font-size: 9px;
+            fill: #7f8c8d;
+            font-weight: 400;
+        }
+
+        @media (max-width: 1400px) {
+            .uml-canvas {
+                grid-template-columns: repeat(2, 1fr);
+                grid-template-rows: repeat(5, auto);
+                gap: 60px 40px;
+            }
+            
+            .frontend-comp { grid-column: 1; grid-row: 1; }
+            .api-controller { grid-column: 2; grid-row: 1; }
+            .ml-model { grid-column: 1; grid-row: 2; }
+            .data-processor { grid-column: 2; grid-row: 2; }
+            .db-manager { grid-column: 1; grid-row: 3; }
+            .transaction-model { grid-column: 2; grid-row: 3; }
+            .config-manager { grid-column: 1; grid-row: 4; }
+            .logger { grid-column: 2; grid-row: 4; }
+            .exception-handler { grid-column: 1; grid-row: 5; }
+        }
+
+        @media (max-width: 768px) {
+            .uml-canvas {
+                grid-template-columns: 1fr;
+                grid-template-rows: repeat(9, auto);
+                gap: 40px;
+                padding: 20px;
+            }
+            
+            .frontend-comp, .api-controller, .ml-model, .data-processor, 
+            .db-manager, .transaction-model, .config-manager, .logger, .exception-handler {
+                grid-column: 1;
+            }
+            
+            .frontend-comp { grid-row: 1; }
+            .api-controller { grid-row: 2; }
+            .ml-model { grid-row: 3; }
+            .data-processor { grid-row: 4; }
+            .db-manager { grid-row: 5; }
+            .transaction-model { grid-row: 6; }
+            .config-manager { grid-row: 7; }
+            .logger { grid-row: 8; }
+            .exception-handler { grid-row: 9; }
+        }
+    </style>
+</head>
+<body>
+    <div class="diagram-container">
+        <svg class="relationship-svg">
+            <defs>
+                <!-- Arrow markers -->
+                <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+                        refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#2c3e50" />
+                </marker>
+                
+                <marker id="arrowhead-dependency" markerWidth="10" markerHeight="7" 
+                        refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#7f8c8d" />
+                </marker>
+                
+                <marker id="triangle" markerWidth="12" markerHeight="10" 
+                        refX="11" refY="5" orient="auto">
+                    <polygon points="0 0, 12 5, 0 10" fill="white" stroke="#2c3e50" stroke-width="1.5"/>
+                </marker>
+                
+                <marker id="diamond" markerWidth="12" markerHeight="8" 
+                        refX="1" refY="4" orient="auto">
+                    <polygon points="0 4, 6 0, 12 4, 6 8" fill="#2c3e50" />
+                </marker>
+                
+                <marker id="diamond-empty" markerWidth="12" markerHeight="8" 
+                        refX="1" refY="4" orient="auto">
+                    <polygon points="0 4, 6 0, 12 4, 6 8" fill="white" stroke="#2c3e50" stroke-width="1.5"/>
+                </marker>
+            </defs>
+            
+            <!-- Frontend to API (Association) -->
+            <line class="arrow-line" x1="24%" y1="15%" x2="42%" y2="15%" />
+            <text class="arrow-label" x="33%" y="13%">sends requests</text>
+            <text class="multiplicity" x="26%" y="18%">1</text>
+            <text class="multiplicity" x="40%" y="18%">1</text>
+            
+            <!-- API to ML Model (Composition) -->
+            <line class="composition-line" x1="58%" y1="15%" x2="76%" y2="15%" />
+            <text class="arrow-label" x="67%" y="13%">uses</text>
+            <text class="multiplicity" x="60%" y="18%">1</text>
+            <text class="multiplicity" x="74%" y="18%">1</text>
+            
+            <!-- API to Database (Composition) -->
+            <line class="composition-line" x1="50%" y1="28%" x2="50%" y2="42%" />
+            <text class="arrow-label" x="53%" y="35%">manages</text>
+            <text class="multiplicity" x="47%" y="30%">1</text>
+            <text class="multiplicity" x="47%" y="40%">1</text>
+            
+            <!-- API to DataProcessor (Dependency) -->
+            <line class="dependency-line" x1="42%" y1="25%" x2="24%" y2="42%" />
+            <text class="arrow-label" x="30%" y="30%">processes</text>
+            
+            <!-- DataProcessor to ML Model (Association) -->
+            <line class="arrow-line" x1="24%" y1="38%" x2="76%" y2="25%" />
+            <text class="arrow-label" x="50%" y="28%">prepares data for</text>
+            
+            <!-- Database to TransactionModel (Aggregation) -->
+            <line class="aggregation-line" x1="58%" y1="50%" x2="76%" y2="50%" />
+            <text class="arrow-label" x="67%" y="48%">stores</text>
+            <text class="multiplicity" x="60%" y="53%">1</text>
+            <text class="multiplicity" x="74%" y="53%">*</text>
+            
+            <!-- API to ConfigManager (Dependency) -->
+            <line class="dependency-line" x1="42%" y1="28%" x2="24%" y2="65%" />
+            <text class="arrow-label" x="28%" y="45%">configures</text>
+            
+            <!-- API to Logger (Dependency) -->
+            <line class="dependency-line" x1="50%" y1="58%" x2="50%" y2="70%" />
+            <text class="arrow-label" x="53%" y="64%">logs to</text>
+            
+            <!-- API to ExceptionHandler (Dependency) -->
+            <line class="dependency-line" x1="58%" y1="28%" x2="76%" y2="70%" />
+            <text class="arrow-label" x="70%" y="45%">handles errors</text>
+        </svg>
+
+        <div class="uml-canvas">
+            <!-- Frontend Component -->
+            <div class="class-box frontend-comp">
+                <div class="class-header">
+                    <div class="stereotype">&lt;&lt;component&gt;&gt;</div>
+                    <div class="class-name">FrontendComponent</div>
+                    <div class="class-type">React.js Application Layer</div>
+                </div>
+                <div class="section-divider"></div>
+                <div class="class-section">
+                    <ul class="attribute-list">
+                        <li class="attribute-item"><span class="visibility-private">-</span> components: <span class="data-type">ReactComponents[]</span></li>
+                        <li class="attribute-item"><span class="visibility-private">-</span> state: <span class="data-type">ApplicationState</span></li>
+                        <li class="attribute-item"><span class="visibility-private">-</span> apiClient: <span class="data-type">HTTPClient</span></li>
+                        <li class="attribute-item"><span class="visibility-private">-</span> fileValidator: <span class="data-type">FileValidator</span></li>
+                    </ul>
+                </div>
+                <div class="section-divider"></div>
+                <div class="class-section">
+                    <ul class="method-list">
+                        <li class="method-item"><span class="visibility-public">+</span> fileUploadHandler(file: <span class="data-type">File</span>): <span class="method-return">Promise&lt;void&gt;</span></li>
+                        <li class="method-item"><span class="visibility-public">+</span> displayResults(data: <span class="data-type">APIResponse</span>): <span class="method-return">void</span></li>
+                        <li class="method-item"><span class="visibility-public">+</span> validateInput(file: <span class="data-type">File</span>): <span class="method-return">ValidationResult</span></li>
+                        <li class="method-item"><span class="visibility-public">+</span> updateUI(response: <span class="data-type">JSONResponse</span>): <span class="method-return">void</span></li>
+                        <li class="method-item"><span class="visibility-private">-</span> resetForm(): <span class="method-return">void</span></li>
+                        <li class="method-item"><span class="visibility-private">-</span> showErrorMessage(error: <span class="data-type">string</span>): <span class="method-return">void</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Fraud Detection API -->
+            <div class="class-box api-controller">
+                <div class="class-header">
+                    <div class="stereotype">&lt;&lt;controller&gt;&gt;</div>
+                    <div class="class-name">FraudDetectionAPI</div>
+                    <div class="class-type">FastAPI REST Controller</div>
+                </div>
+                <div class="section-divider"></div>
+                <div class="class-section">
+                    <ul class="attribute-list">
+                        <li class="attribute-item"><span class="visibility-private">-</span> app: <span class="data-type">FastAPI</span></li>
+                        <li class="attribute-item"><span class="visibility-private">-</span> mlModel: <span class="data-type">MLModel</span></li>
+                        <li class="attribute-item"><span class="visibility-private">-</span> database: <span class="data-type">DatabaseManager</span></li>
+                        <li class="attribute-item"><span class="visibility-private">-</span> processor: <span class="data-type">DataProcessor</span></li>
+                        <li class="attribute-item"><span class="visibility-private">-</span> config: <span class="data-type">ConfigManager</span></li>
+                    </ul>
+                </div>
+                <div class="section-divider"></div>
+                <div class="class-section">
+                    <ul class="method-list">
+                        <li class="method-item"><span class="visibility-public">+</span> predictCSV(file: <span class="data-type">UploadFile</span>): <span class="method-return">JSONResponse</span></li>
+                        <li class="method-item"><span class="visibility-public">+</span> getFraudulentTransactions(): <span class="method-return">List&lt;Transaction&gt;</span></li>
+                        <li class="method-item"><span class="visibility-public">+</span> getProcessingLogs(): <span class="method-return">List&lt;ProcessLog&gt;</span></li>
+                        <li class="method-item"><span class="visibility-public">+</span> healthCheck(): <span class="method-return">StatusResponse</span></li>
+                        <li class="method-item"><span class="visibility-public">+</span> clearData(): <span class="method-return">SuccessResponse</span></li>
+                        <li class="method-item"><span class="visibility-private">-</span> validateRequest(request: <span class="data-type">Request</span>): <span class="method-return">boolean</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- ML Model -->
+            <div class="class-box ml-model">
+                <div class="class-header">
+                    <div class="stereotype">&lt;&lt;service&gt;&gt;</div>
+                    <div class="class-name">MLModel</div>
+                    <div class="class-type">Random Forest Classifier Engine</div>
+                </div>
+                <div class="section-divider"></div>
+                <div class="class-section">
+                    <ul class="attribute-list">
+                        <li class="attribute-item"><span class="visibility-private">-</span> model: <span class="data-type">RandomForestClassifier</span></li>
+                        <li class="attribute-item"><span class="visibility-private">-</span> modelPath: <span class="data-type">String</span></li>
+                        <li class="attribute-item"><span class="visibility-private">-</span> accuracy: <span class="data-type">Float</span> = 0.9997</li>
+                        <li class="attribute-item"><span class="visibility-private">-</span> precision: <span class="data-type">Float</span> = 0.9812</li>
+                        <li class="attribute-item"><span class="visibility-private">-</span> recall: <span class="data-type">Float</span> = 0.7787</li>
+                        <li class="attribute-item"><span class="visibility-private">-</span> f1Score: <span class="data-type">Float</span> = 0.8683</li>
+                    </ul>
+                </div>
+                <div class="section-divider"></div>
+                <div class="class-section">
+                    <ul class="method-list">
+                        <li class="method-item"><span class="visibility-public">+</span> loadModel(path: <span class="data-type">String</span>): <span class="method-return">void</span></li>
+                        <li class="method-item"><span class="visibility-public">+</span> predict(data: <span class="data-type">DataFrame</span>): <span class="method-return">ndarray</span></li>
+                        <li class="method-item"><span class="visibility-public">+</span> predictProba(data: <span class="data-type">DataFrame</span>): <span class="method-return">ndarray</span></li>
+                        <li class="method-item"><span class="visibility-public">+</span> getFeatureImportance(): <span class="method-return">Dict&lt;String, Float&gt;</span></li>
+                        <li class="method-item"><span class="visibility-public">+</span> evaluateModel(X_test, y_test): <span class="method-return">MetricsReport</span></li>
+                        <li class="method-item"><span class="visibility-private">-</span> saveModel(path: <span class="data-type">String</span>): <span class="method-return">void</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Data Processor -->
+            <div class="class-box data-processor">
+                <div class="class-header">
+                    <div class="stereotype">&lt;&lt;service&gt;&gt;</div>
+                    <div class="class-name">DataProcessor</div>
+                    <div class="class-type">pandas Data Processing Engine</div>
+                </div>
+                <div class="section-divider"></div>
+                <div class="class-section">
+                    <ul class="attribute-list">
+                        <li class="attribute-item"><span class="visibility-private">-</span> dataframe: <span class="data-type">DataFrame</span></li>
+                        <li class="attribute-item"><span class="visibility-private">-</span> preprocessor: <span class="data-type">StandardScaler</span></li>
+                        <li class="attribute-item"><span class="visibility-private">-</span> encoder: <span class="data-type">LabelEncoder</span></li>
+                        <li class="attribute-item"><span class="visibility-private">-</span> validator: <span class="data-type">InputValidator</span></li>
+                        <li class="attribute-item"><span class="visibility-private">-</span> requiredColumns: <span class="data-type">List&lt;String&gt;</span></li>
+                    </ul>
+                </div>
+                <div class="section-divider"></div>
+                <div class="class-section">
+                    <ul class="method-list">
+                        <li class="method-item"><span class="visibility-public">+</span> preprocessData(csvData: <span class="data-type">bytes</span>): <span class="method-return">DataFrame</span></li>
+                        <li class="method-item"><span class="visibility-public">+</span> featureEngineering(df: <span class="data-type">DataFrame</span>): <span class="method-return">ndarray</span></li>
+                        <li class="method-item"><span class="visibility-public">+</span> validateInput(data: <span class="data-type">DataFrame</span>): <span class="method-return">ValidationResult</span></li>
+                        <li class="method-item"><span class="visibility-public">+</span> cleanData(df: <span class="data-type">DataFrame</span>): <span class="method-return">DataFrame</span></li>
+                        <li class="method-item"><span class="visibility-private">-</span> handleMissingValues(df: <span class="data-type">DataFrame</span>): <span class="method-return">DataFrame</span></li>
+                        <li class="method-item"><span class="visibility-private">-</span> scaleFeatures(data: <span class="data-type">ndarray</span>): <span class="method-return">ndarray</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Database Manager -->
+            <div class="class-box db-manager">
+                <div class="class-header">
+                    <div class="stereotype">&lt;&lt;repository&gt;&gt;</div>
+                    <div class="class-name">DatabaseManager</div>
+                    <div class="class-type">SQLite Data Persistence Layer</div>
+                </div>
+                <div class="section-divider"></div>
+                <div class="class-section">
+                    <ul class="attribute-list">
+                        <li class="attribute-item"><span class="visibility-private">-</span> connection: <span class="data-type">sqlite3.Connection</span></li>
+                        <li class="attribute-item"><span class="visibility-private">-</span> dbPath: <span class="data-type">String</span></li>
+                        <li class="attribute-item"><span class="visibility-private">-</span> cursor: <span class="data-type">sqlite3.Cursor</span></li>
+                        <li class="attribute-item"><span class="visibility-private">-</span> tableSchemas: <span class="data-type">Dict&lt;String, String&gt;</span></li>
+                    </ul>
+                </div>
+                <div class="section-divider"></div>
+                <div class="class-section">
+                    <ul class="method-list">
+                        <li class="method-item"><span class="visibility-public">+</span> createTables(): <span class="method-return">void</span></li>
+                        <li class="method-item"><span class="visibility-public">+</span> insertFraudTransaction(transaction: <span class="data-type">TransactionModel</span>): <span class="method-return">boolean</span></li>
+                        <li class="method-item"><span class="visibility-public">+</span> getAllFraudulent(): <span class="method-return">List&lt;TransactionModel&gt;</span></li>
+                        <li class="method-item"><span class="visibility-public">+</span> logProcessing(log: <span class="data-type">ProcessLog</span>): <span class="method-return">void</span></li>
+                        <li class="method-item"><span class="visibility-public">+</span> clearAllData(): <span class="method-return">boolean</span></li>
+                        <li class="method-item"><span class="visibility-private">-</span> executeQuery(query: <span class="data-type">String</span>, params: <span class="data-type">tuple</span>): <span class="method-return">Any</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Transaction Model -->
+            <div class="class-box transaction-model">
+                <div class="class-header">
+                    <div class="stereotype">&lt;&lt;entity&gt;&gt;</div>
+                    <div class="class-name">TransactionModel</div>
+                    <div class="class-type">Transaction Data Entity</div>
+                </div>
+                <div class="section-divider"></div>
+                <div class="class-section">
+                    <ul class="attribute-list">
+                        <li class="attribute-item"><span class="visibility-public">+</span> transactionId: <span class="data-type">String</span></li>
+                        <li class="attribute-item"><span class="visibility-public">+</span> amount: <span class="data-type">Float</span></li>
+                        <li class="attribute-item"><span class="visibility-public">+</span> timestamp: <span class="data-type">DateTime</span></li>
+                        <li class="attribute-item"><span class="visibility-public">+</span> merchantId: <span class="data-type">String</span></li>
+                        <li class="attribute-item"><span class="visibility-public">+</span> userId: <span class="data-type">String</span></li>
+                        <li class="attribute-item"><span class="visibility-public">+</span> isFraud: <span class="data-type">Boolean</span></li>
+                        <li class="attribute-item"><span class="visibility-public">+</span> confidence: <span class="data-type">Float</span></li>
+                        <li class="attribute-item"><span class="visibility-private">-</span> features: <span class="data-type">Dict&lt;String, Any&gt;</span></li>
+                    </ul>
+                </div>
+                <div class="section-divider"></div>
+                <div class="class-section">
+                    <ul class="method-list">
+                        <li class="method-item"><span class="visibility-public">+</span> toDict(): <span class="method-return">Dict&lt;String, Any&gt;</span></li>
+                        <li class="method-item"><span class="visibility-public">+</span> fromDict(data: <span class="data-type">Dict</span>): <span class="method-return">TransactionModel</span></li>
+                        <li class="method-item"><span class="visibility-public">+</span> validate(): <span class="method-return">ValidationResult</span></li>
+                        <li class="method-item"><span class="visibility-public">+</span> toJSON(): <span class="method-return">String</span></li>
+                        <li class="method-item"><span class="visibility-private">-</span> calculateRiskScore(): <span class="method-return">Float</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Config Manager -->
+            <div class="class-box config-manager">
+                <div class="class-header">
+                    <div class="stereotype">&lt;&lt;utility&gt;&gt;</div>
+                    <div class="class-name">ConfigManager</div>
+                    <div class="class-type">Configuration Management</div>
+                </div>
+                <div class="section-divider"></div>
+                <div class="class-section">
+                    <ul class="attribute-list">
+                        <li class="attribute-item"><span class="visibility-private">-</span> configFile: <span class="data-type">String</span></li>
+                        <li class="attribute-item"><span class="visibility-private">-</span> settings: <span class="data-type">Dict&lt;String, Any&gt;</span></li>
+                        <li class="attribute-item"><span class="visibility-private">-</span> envVars: <span class="data-type">Dict&lt;String, String&gt;</span></li>
+                    </ul>
+                </div>
+                <div class="section-divider"></div>
+                <div class="class-section">
+                    <ul class="method-list">
+                        <li class="method-item"><span class="visibility-public">+</span> loadConfig(): <span class="method-return">void</span></li
